@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.repository.Repository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+
 import org.springframework.security.access.SecurityConfig;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -14,6 +15,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+
+import org.springframework.stereotype.Component;
+
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,6 +26,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -33,23 +38,36 @@ import com.example.crud.payload.response.AuthenticationResponse;
 import com.example.crud.repository.TutorialRepository;
 import com.example.crud.util.JwtUtils;
 
+
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.example.crud.model.Tutorial;
+import com.example.crud.repository.TutorialRepository;
+
 import java.util.*;
 
 
 @RestController
+
 @CrossOrigin(origins = "*", maxAge = 3600)
 //@CrossOrigin(origins = "http://localhost:4200")
+
+//@CrossOrigin(origins = "http://localhost:4200")
+
 @RequestMapping("/api")
 public class TutorialController {
 	
 	@Autowired
 	TutorialRepository tutorialRepository;
+
 	@Autowired
 	JwtUtils jwtUtils;
 	@Autowired
 	UserDetailsService userDetailsService;
 	@Autowired
 	AuthenticationManager authenticationManager;
+
 	
 	@PostMapping("/tutorials")
 	public ResponseEntity<Tutorial> createTutorial(@RequestBody Tutorial tutorial) {
@@ -64,36 +82,13 @@ public class TutorialController {
 		
 	}
 	
-	@RequestMapping(value = "/authenticate", method = RequestMethod.POST)
-	public ResponseEntity<AuthenticationResponse> login(@RequestBody AuthenticationRequest authenticationRequest) throws Exception{
-		Authentication authentication;
-		System.out.println("authenticate request calling");
-		try {
-			
-			 authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(authenticationRequest.getUsername(), authenticationRequest.getPassword()));
-			 System.out.println("authenticate request user"+authenticationRequest.getUsername()+"password"+authenticationRequest.getPassword());
-		} catch (DisabledException e) {
-			throw new Exception("USER_DISABLED", e);
-		} catch (BadCredentialsException e) {
-			throw new Exception("INVALID_CREDENTIALS", e);
-		}
-		//Authentication authentication = authenticationManager.authenticate(
-			//	new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword()));
-		SecurityContextHolder.getContext().setAuthentication(authentication);
-		//final MyUserDetail userDetails = (MyUserDetail) userDetailsService
-			//	.loadUserByUsername(authenticationRequest.getUsername());
-		String jwt = jwtUtils.generateToken(authentication);
-		System.out.println("jwt calling"+jwt);
-		return ResponseEntity.ok(new AuthenticationResponse(jwt));
-		
-	}
-	
 	@GetMapping("/")
 	public String getAll()
 	{
 	
 		return "welcome";
 	}	
+
 	@GetMapping("/tutorials")
 	public ResponseEntity<List<Tutorial>> getAllTutorials(@RequestParam(required = false)String title){
 		try {
@@ -174,6 +169,30 @@ public class TutorialController {
 			
 			return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
 		}
+	}
+	
+	@RequestMapping(value = "/authenticate", method = RequestMethod.POST)
+	public ResponseEntity<AuthenticationResponse> login(@RequestBody AuthenticationRequest authenticationRequest) throws Exception{
+		Authentication authentication;
+		System.out.println("authenticate request calling");
+		try {
+			
+			 authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(authenticationRequest.getUsername(), authenticationRequest.getPassword()));
+			 System.out.println("authenticate request user"+authenticationRequest.getUsername()+"password"+authenticationRequest.getPassword());
+		} catch (DisabledException e) {
+			throw new Exception("USER_DISABLED", e);
+		} catch (BadCredentialsException e) {
+			throw new Exception("INVALID_CREDENTIALS", e);
+		}
+		//Authentication authentication = authenticationManager.authenticate(
+			//	new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword()));
+		SecurityContextHolder.getContext().setAuthentication(authentication);
+		//final MyUserDetail userDetails = (MyUserDetail) userDetailsService
+			//	.loadUserByUsername(authenticationRequest.getUsername());
+		String jwt = jwtUtils.generateToken(authentication);
+		System.out.println("jwt calling"+jwt);
+		return ResponseEntity.ok(new AuthenticationResponse(jwt));
+		
 	}
 	
 	
