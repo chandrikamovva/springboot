@@ -1,22 +1,39 @@
 package com.example.crud.model;
 
 import javax.persistence.*;
+import javax.validation.constraints.NotBlank;
 
 @Entity
-@Table(name = "user")
+@Table(name = "user",uniqueConstraints = { 
+		@UniqueConstraint(columnNames = "user_name"),
+		@UniqueConstraint(columnNames = "email") 
+	})
 public class User {
 	@Id
 	@GeneratedValue(strategy = GenerationType.AUTO)
 	public int id;
+	@NotBlank
 	@Column(name = "user_name")
 	public String userName;
+	@NotBlank
 	@Column(name = "password")
 	public String password;
 	@Column(name = "active")
 	public boolean active;
 	@Column(name = "roles")
 	public String Role;
+	@NotBlank
+	@Column(name = "email")
+	public String email;
 	
+	public User() {}
+	
+	public User(String username,String password,String email) {
+		this.userName = username;
+		this.password = password;
+		this.email = email;
+		
+	}
 	
 	public int getId() {
 		return id;

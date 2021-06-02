@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import com.example.crud.repository.UserRepository;
 
 @SpringBootApplication
-@EnableJpaRepositories(basePackageClasses = UserRepository.class)
+
 
 public class SpringBootCrudApplication {
 

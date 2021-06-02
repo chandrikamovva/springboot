@@ -8,5 +8,8 @@ import com.example.crud.model.User;
 
 public interface UserRepository extends JpaRepository<User, Integer>{
 	Optional<User> findByUserName(String name);
+	Boolean existsByUserName(String username);
+
+	Boolean existsByemail(String email);
 
 }

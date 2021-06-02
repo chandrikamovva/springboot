@@ -17,6 +17,7 @@ public class MyUserDetail implements UserDetails {
 	public boolean active;
 	public String Role;
 	private int id;
+	private String email;
 	private List<GrantedAuthority> authorities;
 	
 	BCryptPasswordEncoder encoder = passwordEncoder();
@@ -24,6 +25,7 @@ public class MyUserDetail implements UserDetails {
 		this.username = user.userName;
 		this.password = encoder.encode(user.getPassword());
 		this.active = user.active;
+		this.email = user.email;
 		this.authorities = Arrays.stream(user.getRole().split(","))
 				.map(SimpleGrantedAuthority :: new)
 				.collect(Collectors.toList());

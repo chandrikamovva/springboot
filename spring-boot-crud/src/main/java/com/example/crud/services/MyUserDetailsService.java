@@ -28,8 +28,5 @@ public class MyUserDetailsService implements org.springframework.security.core.u
 		return user.map(MyUserDetail:: new).get();
 	}
 	
-	@Bean
-	public BCryptPasswordEncoder passwordEncoder() {
-	    return new BCryptPasswordEncoder();
-	}
+	
 }

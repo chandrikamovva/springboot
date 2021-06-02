@@ -15,7 +15,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
-
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -31,11 +31,17 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.crud.model.ERole;
 import com.example.crud.model.MyUserDetail;
+import com.example.crud.model.Role;
 import com.example.crud.model.Tutorial;
+import com.example.crud.model.User;
 import com.example.crud.payload.request.AuthenticationRequest;
+import com.example.crud.payload.request.SignupRequest;
 import com.example.crud.payload.response.AuthenticationResponse;
+import com.example.crud.payload.response.MessageResponse;
 import com.example.crud.repository.TutorialRepository;
+import com.example.crud.repository.UserRepository;
 import com.example.crud.util.JwtUtils;
 
 
@@ -43,9 +49,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.crud.model.Tutorial;
-import com.example.crud.repository.TutorialRepository;
+import com.example.crud.repository.*;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 
 @RestController
@@ -60,6 +67,8 @@ public class TutorialController {
 	
 	@Autowired
 	TutorialRepository tutorialRepository;
+	@Autowired
+	UserRepository userRepository;
 
 	@Autowired
 	JwtUtils jwtUtils;
@@ -67,6 +76,10 @@ public class TutorialController {
 	UserDetailsService userDetailsService;
 	@Autowired
 	AuthenticationManager authenticationManager;
+	@Autowired
+	PasswordEncoder encoder;
+	@Autowired
+	RoleRepository roleRepository;
 
 	
 	@PostMapping("/tutorials")
@@ -171,8 +184,8 @@ public class TutorialController {
 		}
 	}
 	
-	@RequestMapping(value = "/authenticate", method = RequestMethod.POST)
-	public ResponseEntity<AuthenticationResponse> login(@RequestBody AuthenticationRequest authenticationRequest) throws Exception{
+	@PostMapping("/auth/signin")
+	public ResponseEntity<?> authenticateUser(@RequestBody AuthenticationRequest authenticationRequest) throws Exception{
 		Authentication authentication;
 		System.out.println("authenticate request calling");
 		try {
@@ -184,15 +197,68 @@ public class TutorialController {
 		} catch (BadCredentialsException e) {
 			throw new Exception("INVALID_CREDENTIALS", e);
 		}
-		//Authentication authentication = authenticationManager.authenticate(
-			//	new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword()));
 		SecurityContextHolder.getContext().setAuthentication(authentication);
-		//final MyUserDetail userDetails = (MyUserDetail) userDetailsService
-			//	.loadUserByUsername(authenticationRequest.getUsername());
 		String jwt = jwtUtils.generateToken(authentication);
 		System.out.println("jwt calling"+jwt);
-		return ResponseEntity.ok(new AuthenticationResponse(jwt));
+		MyUserDetail userDetails = (MyUserDetail) authentication.getPrincipal();
+		List<String> roles = userDetails.getAuthorities().stream()
+				.map(item -> item.getAuthority())
+				.collect(Collectors.toList());
+		return ResponseEntity.ok(new AuthenticationResponse(jwt,  
+				 userDetails.getUsername(),  
+				 roles));
 		
+	}
+	
+	@PostMapping("/auth/signup")
+	public ResponseEntity<?> registerUser(@RequestBody SignupRequest signupRequest){
+		if(userRepository.existsByUserName(signupRequest.getUsername())) {
+			return ResponseEntity.badRequest().body(new MessageResponse("Error: Username is already taken!"));
+		}
+		
+		if(userRepository.existsByemail(signupRequest.getEmail())) {
+			return ResponseEntity.badRequest().body(new MessageResponse("Error: Email Already Existed"));
+		}
+		
+		User user = new User(signupRequest.getUsername(),encoder.encode(signupRequest.getPassword()),signupRequest.getEmail());
+		
+		Set<String> strRoles  = signupRequest.getRole();
+		Set<String> roles = new HashSet<>();
+		
+		if (strRoles == null) {
+			Role userRole = roleRepository.findByName(ERole.ROLE_USER)
+					.orElseThrow(() -> new RuntimeException("Error: Role is not found."));
+			roles.add("ROLE_USER");
+		} else {
+			strRoles.forEach(role -> {
+				switch (role) {
+				case "admin":
+					Role adminRole = roleRepository.findByName(ERole.ROLE_ADMIN)
+							.orElseThrow(() -> 
+							new RuntimeException("Error: Role is not found."));
+					
+					roles.add("ROLE_ADMIN");
+
+					break;
+				case "mod":
+					Role modRole = roleRepository.findByName(ERole.ROLE_MODERATOR)
+							.orElseThrow(() -> new RuntimeException("Error: Role is not found."));
+					roles.add("ROLE_MODERATOR");
+
+					break;
+				default:
+					Role userRole = roleRepository.findByName(ERole.ROLE_USER)
+							.orElseThrow(() -> new RuntimeException("Error: Role is not found."));
+					roles.add("ROLE_USER");
+				}
+			});
+		}
+		 String strNames = String.join(",", roles);
+		System.out.println("role calling"+strNames);
+		user.setRole(strNames);
+		userRepository.save(user);
+
+		return ResponseEntity.ok(new MessageResponse("User registered successfully!"));
 	}
 	
 	

@@ -25,6 +25,10 @@ import com.example.crud.util.AuthEntryPointJwt;
 
 @Configuration
 @EnableWebSecurity
+@EnableGlobalMethodSecurity(
+		// securedEnabled = true,
+		// jsr250Enabled = true,
+		prePostEnabled = true)
 public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 	@Autowired
 	UserDetailsService userDetailsService;
@@ -34,7 +38,8 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 	@Override
 	protected void configure(AuthenticationManagerBuilder auth) throws Exception {
 		// TODO Auto-generated method stub
-		auth.parentAuthenticationManager(authenticationManagerBean()).userDetailsService(userDetailsService);
+		auth.userDetailsService(userDetailsService).passwordEncoder(passwordEncoder());
+		//auth.parentAuthenticationManager(authenticationManagerBean()).userDetailsService(userDetailsService);
 		 //auth.userDetailsService(userDetailsService);
 		/*
 		 * auth.inMemoryAuthentication().withUser("chandrika") .password("123456")
@@ -45,13 +50,17 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 	@Override
 	protected void configure(HttpSecurity http) throws Exception {
 		// TODO Auto-generated method stub
-		http.cors().and().csrf().disable().exceptionHandling().authenticationEntryPoint(unauthorizedHandler).and()
-				.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and().authorizeRequests()
-				.antMatchers("/api/tutorials/{id}").hasRole("ADMIN").antMatchers("/api/tutorials")
-				.hasAnyRole("ADMIN", "ROLE_USER").antMatchers("/api/authenticate").permitAll().anyRequest().authenticated();
-		//.and().addFilter(new JWTAuthenticationFilter(authenticationManager()));
+		
+		http.cors().and().csrf().disable()
+		.exceptionHandling().authenticationEntryPoint(unauthorizedHandler).and()
+		.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and()
+		.authorizeRequests().antMatchers("/api/auth/**").permitAll()
+		.antMatchers("/api/test/**").permitAll()
+		.anyRequest().authenticated();
 
-		http.addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);
+	http.addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);
+		
+		
 
 		/*
 		 * http.authorizeRequests().antMatchers("/api/tutorials/{id}").hasRole("ADMIN")
@@ -75,7 +84,10 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 		return super.authenticationManagerBean();
 	}
 
-	
+	@Bean
+	public BCryptPasswordEncoder passwordEncoder() {
+	    return new BCryptPasswordEncoder();
+	}
 	/*
 	 * @Bean public BCryptPasswordEncoder getPasswordEncoder() { return new
 	 * BCryptPasswordEncoder(); }
