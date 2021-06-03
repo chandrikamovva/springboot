@@ -33,23 +33,27 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.crud.model.ERole;
 import com.example.crud.model.MyUserDetail;
+import com.example.crud.model.RefreshToken;
 import com.example.crud.model.Role;
 import com.example.crud.model.Tutorial;
 import com.example.crud.model.User;
 import com.example.crud.payload.request.AuthenticationRequest;
 import com.example.crud.payload.request.SignupRequest;
+import com.example.crud.payload.request.TokenRefreshRequest;
 import com.example.crud.payload.response.AuthenticationResponse;
 import com.example.crud.payload.response.MessageResponse;
+import com.example.crud.payload.response.TokenRefreshResponse;
 import com.example.crud.repository.TutorialRepository;
 import com.example.crud.repository.UserRepository;
 import com.example.crud.util.JwtUtils;
-
+import com.example.crud.util.TokenRefreshException;
 
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.crud.model.Tutorial;
 import com.example.crud.repository.*;
+import com.example.crud.services.RefreshTokenService;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -80,6 +84,9 @@ public class TutorialController {
 	PasswordEncoder encoder;
 	@Autowired
 	RoleRepository roleRepository;
+	 @Autowired
+	 RefreshTokenService refreshTokenService;
+
 
 	
 	@PostMapping("/tutorials")
@@ -201,10 +208,14 @@ public class TutorialController {
 		String jwt = jwtUtils.generateToken(authentication);
 		System.out.println("jwt calling"+jwt);
 		MyUserDetail userDetails = (MyUserDetail) authentication.getPrincipal();
-		List<String> roles = userDetails.getAuthorities().stream()
-				.map(item -> item.getAuthority())
-				.collect(Collectors.toList());
-		return ResponseEntity.ok(new AuthenticationResponse(jwt,  
+		
+		 List<String> roles = userDetails.getAuthorities().stream().map(item -> item.getAuthority())
+		        .collect(Collectors.toList());
+		
+		 System.out.println("id"+userDetails.getId());
+		RefreshToken refreshToken = refreshTokenService.createRefreshToken(userDetails.getId());
+		
+		return ResponseEntity.ok(new AuthenticationResponse(jwt,refreshToken.getToken(),  
 				 userDetails.getUsername(),  
 				 roles));
 		
@@ -260,6 +271,22 @@ public class TutorialController {
 
 		return ResponseEntity.ok(new MessageResponse("User registered successfully!"));
 	}
+	
+	@PostMapping("/auth/refreshtoken")
+	  public ResponseEntity<?> refreshtoken(@RequestBody TokenRefreshRequest request) {
+	    String requestRefreshToken = request.getRefreshToken();
+	    return refreshTokenService.findByToken(requestRefreshToken)
+	            .map(refreshTokenService::verifyExpiration)
+	            .map(RefreshToken::getUser)
+	            .map(user -> {
+	              String token = jwtUtils.generateTokenFromUsername(user.getUsername());
+	              return ResponseEntity.ok(new TokenRefreshResponse(token, requestRefreshToken));
+	            })
+	            .orElseThrow(() -> new TokenRefreshException(requestRefreshToken,
+	                "Refresh token is not in database!"));
+
+	    
+	  }
 	
 	
 }

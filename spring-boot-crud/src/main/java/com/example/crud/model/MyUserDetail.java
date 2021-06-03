@@ -16,14 +16,16 @@ public class MyUserDetail implements UserDetails {
 	public String password;
 	public boolean active;
 	public String Role;
+	
 	private int id;
 	private String email;
 	private List<GrantedAuthority> authorities;
 	
-	BCryptPasswordEncoder encoder = passwordEncoder();
+	
 	public MyUserDetail(User user) {
+		this.id = user.id;
 		this.username = user.userName;
-		this.password = encoder.encode(user.getPassword());
+		this.password = user.getPassword();
 		this.active = user.active;
 		this.email = user.email;
 		this.authorities = Arrays.stream(user.getRole().split(","))
@@ -31,11 +33,7 @@ public class MyUserDetail implements UserDetails {
 				.collect(Collectors.toList());
 	}
 	
-	private BCryptPasswordEncoder passwordEncoder() {
-		// TODO Auto-generated method stub
-		return new BCryptPasswordEncoder();
-	}
-
+	
 	public MyUserDetail() {}
 	@Override
 	public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -78,5 +76,48 @@ public class MyUserDetail implements UserDetails {
 		// TODO Auto-generated method stub
 		return active;
 	}
+	public int getId() {
+		return id;
+	}
+
+	public void setId(int id) {
+		this.id = id;
+	}
+	public boolean isActive() {
+		return active;
+	}
+
+	public void setActive(boolean active) {
+		this.active = active;
+	}
+
+	public String getRole() {
+		return Role;
+	}
+
+	public void setRole(String role) {
+		Role = role;
+	}
+
+	public String getEmail() {
+		return email;
+	}
+
+	public void setEmail(String email) {
+		this.email = email;
+	}
+
+	public void setUsername(String username) {
+		this.username = username;
+	}
+
+	public void setPassword(String password) {
+		this.password = password;
+	}
+
+	public void setAuthorities(List<GrantedAuthority> authorities) {
+		this.authorities = authorities;
+	}
+
 
 }

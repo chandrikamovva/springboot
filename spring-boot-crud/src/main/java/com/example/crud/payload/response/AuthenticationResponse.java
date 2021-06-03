@@ -9,10 +9,13 @@ public class AuthenticationResponse implements Serializable {
 	private String jwt;
 	private String username;
 	private List<String> roles;
-	public AuthenticationResponse(String jwt,String username,List<String> roles2) {
+	private String refreshToken;
+	
+	public AuthenticationResponse(String jwt, String refreshtoken,String username,List<String> roles2) {
         this.jwt = jwt;
         this.username = username;
         this.roles = roles2;
+        this.refreshToken = refreshtoken;
     }
 	public AuthenticationResponse(String jwt) {
         this.jwt = jwt;
@@ -40,5 +43,11 @@ public class AuthenticationResponse implements Serializable {
 
 	public void setJwt(String jwt) {
 		this.jwt = jwt;
+	}
+	public String getRefreshToken() {
+		return refreshToken;
+	}
+	public void setRefreshToken(String refreshToken) {
+		this.refreshToken = refreshToken;
 	}
 }
